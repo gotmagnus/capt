@@ -73,3 +73,11 @@ The workspace sidebar is a slide-over drawer below `lg` (`MobileSidebar` in `src
 - Tax estimates use 2025 US federal figures and are labelled as estimates; nothing here is legal or tax advice.
 - Email delivery, payment processing, HRIS/accounting APIs and e-signature providers are stubbed at the integration boundary; the workflows, records and audit trail are real.
 - `scripts/dev-session.ts` mints a session cookie for a seeded user so pages can be fetched with `curl` during development.
+
+## License
+
+Copyright © 2026 The Capt Authors.
+
+Capt is free software, licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). You can use, study, modify and self-host it. If you run a modified version as a service that other people use over a network, you must make the source of your version available to them under the same license.
+
+The software comes with no warranty. It is not legal, tax or investment advice.
