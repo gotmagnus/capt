@@ -17,7 +17,7 @@ export function SignupForm() {
         <Input name="name" required placeholder="Ada Lovelace" />
       </Field>
       <Field label="Work email">
-        <Input name="email" type="email" required placeholder="ada@company.com" autoComplete="email" />
+        <Input name="email" type="email" required placeholder="ada@example.com" autoComplete="email" />
       </Field>
       <Field label="Password" hint="At least 8 characters.">
         <Input name="password" type="password" required minLength={8} autoComplete="new-password" />

@@ -93,7 +93,7 @@ export default async function ReportsPage(props: PageProps<"/app/[companyId]/rep
                 </Field>
               </div>
               <Field label="Recipients" hint="Comma-separated email addresses.">
-                <Input name="recipients" placeholder="finance@company.com, counsel@lawfirm.com" defaultValue={ctx.user.email} required />
+                <Input name="recipients" placeholder="finance@example.com, counsel@example.com" defaultValue={ctx.user.email} required />
               </Field>
             </FormDialog>
           ) : null}

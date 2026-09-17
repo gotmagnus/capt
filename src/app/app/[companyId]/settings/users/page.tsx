@@ -65,7 +65,7 @@ export default async function UsersPage(props: PageProps<"/app/[companyId]/setti
                 <Input name="name" required placeholder="Jane Doe" />
               </Field>
               <Field label="Email" required>
-                <Input name="email" type="email" required placeholder="jane@company.com" />
+                <Input name="email" type="email" required placeholder="jane@example.com" />
               </Field>
               <Field label="Role">
                 <Select name="role" defaultValue="EMPLOYEE">

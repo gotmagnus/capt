@@ -27,7 +27,7 @@ export function LoginForm({ next }: { next?: string }) {
       <form action={action} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
         <Field label="Email">
-          <Input name="email" type="email" autoComplete="email" placeholder="you@company.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input name="email" type="email" autoComplete="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field label="Password">
           <Input name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />

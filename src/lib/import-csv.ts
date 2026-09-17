@@ -7,7 +7,7 @@ import { SECURITY_TYPES, STAKEHOLDER_RELATIONSHIPS } from "@/lib/types";
 
 export const IMPORT_COLUMNS = [
   { key: "holderName", header: "Holder name", required: true, example: "Ada Lovelace" },
-  { key: "email", header: "Email", required: false, example: "ada@company.com" },
+  { key: "email", header: "Email", required: false, example: "ada@example.com" },
   { key: "relationship", header: "Relationship", required: false, example: "EMPLOYEE" },
   { key: "securityType", header: "Security type", required: true, example: "OPTION_ISO" },
   { key: "classOrPlan", header: "Share class or plan", required: false, example: "2022 Equity Incentive Plan" },
@@ -254,6 +254,6 @@ export function importTemplateCsv() {
   const header = toCsvLine(IMPORT_COLUMNS.map((c) => c.header));
   const example1 = toCsvLine(IMPORT_COLUMNS.map((c) => c.example));
   const example2 = toCsvLine(["Basecamp Ventures", "ops@basecamp.vc", "INVESTOR", "PREFERRED_SHARES", "Series A Preferred", "500000", "2.10", "2024-09-15", "", ""]);
-  const example3 = toCsvLine(["Grace Hopper", "grace@company.com", "FOUNDER", "RSA", "Common Stock", "4000000", "0.0001", "2022-03-15", "4 years, no cliff, monthly", "2022-03-15"]);
+  const example3 = toCsvLine(["Grace Hopper", "grace@example.com", "FOUNDER", "RSA", "Common Stock", "4000000", "0.0001", "2022-03-15", "4 years, no cliff, monthly", "2022-03-15"]);
   return [header, example1, example2, example3].join("\n");
 }

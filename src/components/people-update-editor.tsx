@@ -127,7 +127,7 @@ export function UpdateEditor({
                   ))}
                 </div>
                 <Field label="External recipients" hint="Comma-separated emails, e.g. prospective investors.">
-                  <Input name="externalEmails" defaultValue={initial?.externalEmails.join(", ") ?? ""} placeholder="partner@fund.vc, scout@angel.co" />
+                  <Input name="externalEmails" defaultValue={initial?.externalEmails.join(", ") ?? ""} placeholder="partner@example.com, scout@example.com" />
                 </Field>
               </CardContent>
             </Card>

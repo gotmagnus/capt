@@ -173,7 +173,7 @@ function ConfigFields({ category, providerId }: { category: string; providerId: 
     return (
       <>
         <Field label={`${providerId === "DOCUSIGN" ? "DocuSign" : "Provider"} account email`}>
-          <Input name="accountEmail" type="email" placeholder="legal@company.com" />
+          <Input name="accountEmail" type="email" placeholder="legal@example.com" />
         </Field>
         <CheckboxRow name="useForAllAgreements" label="Route all new agreements through this provider" />
       </>
@@ -182,7 +182,7 @@ function ConfigFields({ category, providerId }: { category: string; providerId: 
   return (
     <>
       <Field label="Program contact">
-        <Input name="contactEmail" type="email" placeholder="liquidity@company.com" />
+        <Input name="contactEmail" type="email" placeholder="liquidity@example.com" />
       </Field>
       <CheckboxRow name="shareCapTable" label="Share the fully diluted cap table for eligibility checks" defaultChecked />
     </>
