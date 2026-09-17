@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f7f7f8;
+  --foreground: #101828;
+  --card: #ffffff;
+  --card-foreground: #101828;
+  --muted: #f1f2f4;
+  --muted-foreground: #667085;
+  --subtle: #98a2b3;
+  --border: #e4e7ec;
+  --border-strong: #d0d5dd;
+  --input: #ffffff;
+  --ring: #1d4ed8;
+  --primary: #1a2b4c;
+  --primary-hover: #223a66;
+  --primary-foreground: #ffffff;
+  --accent: #2563eb;
+  --accent-soft: #eaf1ff;
+  --accent-foreground: #1d4ed8;
+  --success: #067647;
+  --success-soft: #ecfdf3;
+  --warning: #b54708;
+  --warning-soft: #fffaeb;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --info: #175cd3;
+  --info-soft: #eff8ff;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-muted: #64748b;
+  --sidebar-active: #1e293b;
+  --sidebar-active-foreground: #ffffff;
+  --chart-1: #1d4ed8;
+  --chart-2: #0e9384;
+  --chart-3: #7a5af8;
+  --chart-4: #dc6803;
+  --chart-5: #c11574;
+  --chart-6: #475467;
+  --chart-7: #16b364;
+  --chart-8: #e04f16;
+  --radius: 8px;
+  /* Marketing site: deep ink fields, cool paper, hairline rules */
+  --ink: #0a1430;
+  --ink-soft: #111d3f;
+  --vellum: #f3f5f9;
+  --rule: #dfe3eb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-vellum: var(--vellum);
+  --color-rule: var(--rule);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Must live in the base layer: unlayered rules beat every Tailwind utility, which
+   silently turned border-primary, border-white/10, border-transparent… into grey. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  /* Grid items default to min-width:auto, so one wide table stretches the whole column
+     past the viewport. Let tracks shrink; the table's wrapper scrolls instead. */
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Whatever directly holds a data table scrolls sideways on narrow screens. */
+  :has(> .data-table) {
+    overflow-x: auto;
+  }
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+
+/* Data tables + generated documents. In the components layer so per-cell utilities
+   (text-right, whitespace-normal, py-1.5…) can override them; unlayered, these rules
+   won over every utility and left numeric headers left-aligned over right-aligned cells. */
+@layer components {
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .data-table tbody tr:hover td {
+    background: #fafbfc;
+  }
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+  .data-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table tfoot td {
+    background: var(--muted);
+    font-weight: 600;
+    border-top: 1px solid var(--border-strong);
+  }
+
+  .prose-doc {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .prose-doc h1 { font-size: 20px; font-weight: 600; margin: 0 0 12px; }
+  .prose-doc h2 { font-size: 16px; font-weight: 600; margin: 20px 0 8px; }
+  .prose-doc h3 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; }
+  .prose-doc p { margin: 0 0 10px; }
+  .prose-doc > :first-child { margin-top: 0; }
+  .prose-doc ul, .prose-doc ol { margin: 0 0 10px 20px; }
+  /* Preflight removes list markers; documents need them back. */
+  .prose-doc ul { list-style: disc; }
+  .prose-doc ol { list-style: decimal; }
+  .prose-doc li { margin: 2px 0; }
+  .prose-doc table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .prose-doc th, .prose-doc td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  .prose-doc th { background: var(--muted); }
+  /* Markdown key/value tables have a blank header row; don't draw it as an empty grey bar. */
+  .prose-doc thead:not(:has(th:not(:empty))) { display: none; }
+  .prose-doc strong { font-weight: 600; }
+  .prose-doc hr { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* @utility (not a plain class) so variants like data-[state=open]:animate-in resolve. */
+@utility animate-in {
+  animation: fade-in 120ms ease-out;
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@utility animate-drawer {
+  animation: drawer-in 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* iOS zooms the page when a focused field is under 16px. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}

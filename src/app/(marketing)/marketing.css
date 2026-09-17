@@ -1,0 +1,236 @@
+/* Marketing site. Everything is scoped to .mkt so the workspace keeps its 14px density. */
+
+html:has(.mkt) {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+/* In the components layer on purpose: unlayered rules would beat Tailwind utilities, so
+   `hidden sm:inline-flex` on a .mkt-btn would never hide it. */
+@layer components {
+  /* .mkt-type brings the display face to pages that keep the app's 14px root (sign in, sign up). */
+  .mkt,
+  .mkt-type {
+    /* Resolved here, not in @theme: --font-bodoni only exists below these layouts. */
+    --mkt-display: var(--font-bodoni), "Bodoni 72", Didot, "Times New Roman", serif;
+  }
+  .mkt {
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  .mkt ::selection {
+    background: #c7d7fe;
+    color: var(--ink);
+  }
+
+  .mkt-container {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .mkt-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Display type: Bodoni, optical size on, tight. Figures are lining + tabular so they sit like a ledger. */
+  /* Optical size is pinned well below the rendered size: the full display cut has hairlines so
+     fine it reads as fashion; a sturdier cut reads as engraving and survives phone screens. */
+  .mkt-display {
+    font-family: var(--mkt-display);
+    font-optical-sizing: none;
+    font-variation-settings: "opsz" 30;
+    font-weight: 500;
+    letter-spacing: -0.028em;
+    font-feature-settings: normal;
+  }
+  /* Below ~30px the hairlines need more weight still. */
+  .mkt-display-sm {
+    font-variation-settings: "opsz" 16;
+    letter-spacing: -0.012em;
+  }
+  .mkt-figure {
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.03em;
+  }
+
+  /* Buttons */
+  .mkt-btn {
+    display: inline-flex;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    padding-inline: 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    transition: background-color 160ms, border-color 160ms, color 160ms, box-shadow 160ms;
+  }
+  .mkt-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  }
+  .mkt-btn-ink {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(10, 20, 48, 0.2);
+  }
+  .mkt-btn-ink:hover {
+    background: var(--ink);
+  }
+  .mkt-btn-outline {
+    border-color: #c9d0dc;
+    background: #fff;
+    color: var(--ink);
+  }
+  .mkt-btn-outline:hover {
+    border-color: var(--ink);
+  }
+  .mkt-btn-ghost {
+    color: var(--ink);
+  }
+  .mkt-btn-ghost:hover {
+    background: var(--vellum);
+  }
+  .mkt-btn-light {
+    background: #fff;
+    color: var(--ink);
+  }
+  .mkt-btn-light:hover {
+    background: #e6ecfb;
+  }
+  .mkt-btn-onink {
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #fff;
+  }
+  .mkt-btn-onink:hover {
+    border-color: #fff;
+  }
+
+  /* The hero sheet: a certificate's double rule around a product table. */
+  .mkt-sheet {
+    border-radius: 14px;
+    border: 1px solid #cfd6e4;
+    background: #fff;
+    padding: 1.5rem;
+    box-shadow:
+      inset 0 0 0 5px #fff,
+      inset 0 0 0 6px var(--rule),
+      0 1px 2px rgba(10, 20, 48, 0.05),
+      0 30px 60px -24px rgba(10, 20, 48, 0.28),
+      0 60px 120px -40px rgba(29, 78, 216, 0.22);
+  }
+  @media (min-width: 640px) {
+    .mkt-sheet {
+      padding: 2.25rem;
+    }
+  }
+
+  /* One page-load moment: the ownership strip is cut left to right, then the rows settle in. */
+  @keyframes mkt-cut {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes mkt-settle {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .mkt-strip-seg {
+    animation: mkt-cut 700ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
+    animation-delay: calc(250ms + var(--i) * 80ms);
+  }
+  .mkt-row {
+    animation: mkt-settle 500ms ease-out both;
+    animation-delay: calc(450ms + var(--i) * 70ms);
+  }
+  .mkt-rise {
+    animation: mkt-settle 700ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
+    animation-delay: calc(var(--d, 0) * 1ms);
+  }
+  .mkt-swap {
+    animation: mkt-settle 360ms ease-out both;
+  }
+
+  /* Accordion rows open by animating a grid track (no measured heights). */
+  .mkt-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 420ms cubic-bezier(0.2, 0.7, 0.1, 1);
+  }
+  .mkt-collapse.is-open {
+    grid-template-rows: 1fr;
+  }
+
+  /* Range input: a ruled track with an ink fill up to the thumb. */
+  .mkt-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2rem;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+  .mkt-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--ink) var(--p), var(--rule) var(--p));
+  }
+  .mkt-range::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--ink) var(--p), var(--rule) var(--p));
+  }
+  .mkt-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin-top: -11px;
+    height: 26px;
+    width: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(10, 20, 48, 0.25);
+    transition: transform 120ms;
+  }
+  .mkt-range::-moz-range-thumb {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(10, 20, 48, 0.25);
+  }
+  .mkt-range:active::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+  .mkt-range:focus-visible {
+    outline: none;
+  }
+  .mkt-range:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+  }
+  .mkt-range:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+  }
+
+  /* Rosette fades toward its edge so it reads as paper texture, not an illustration. */
+  .mkt-rosette {
+    -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  }
+}

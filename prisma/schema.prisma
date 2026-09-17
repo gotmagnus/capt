@@ -1,0 +1,739 @@
+// Cap table platform data model.
+// SQLite for zero-config local runs; string-typed enums (see src/lib/types.ts) and
+// JSON-as-string columns keep the schema portable to Postgres later.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  memberships  CompanyMembership[]
+  stakeholders Stakeholder[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Company {
+  id                 String    @id @default(cuid())
+  name               String
+  legalName          String
+  slug               String    @unique
+  entityType         String    @default("C_CORP") // C_CORP | S_CORP | LLC | PBC
+  incorporationState String    @default("Delaware")
+  incorporationDate  DateTime?
+  fiscalYearEnd      String    @default("12-31")
+  ein                String?
+  website            String?
+  address            String?
+  currency           String    @default("USD")
+  logoUrl            String?
+  plan               String    @default("GROWTH") // STARTUP | GROWTH | ENTERPRISE
+  stage              String    @default("SEED") // PRE_SEED | SEED | SERIES_A | SERIES_B | SERIES_C_PLUS | LATE
+  authorizedShares   Float?
+  parValue           Float     @default(0.0001)
+  totalAssets        Float?    // for Rule 701 15%-of-assets test
+  settings           String    @default("{}") // JSON
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  memberships       CompanyMembership[]
+  stakeholders      Stakeholder[]
+  shareClasses      ShareClass[]
+  equityPlans       EquityPlan[]
+  vestingSchedules  VestingSchedule[]
+  securities        Security[]
+  transactions      Transaction[]
+  valuations        Valuation[]
+  rounds            FundingRound[]
+  scenarios         Scenario[]
+  boardConsents     BoardConsent[]
+  documents         Document[]
+  exerciseRequests  ExerciseRequest[]
+  auditLogs         AuditLog[]
+  updates           InvestorUpdate[]
+  offerLetters      OfferLetter[]
+  integrations      Integration[]
+  notifications     Notification[]
+  tenderOffers      TenderOffer[]
+  complianceRecords ComplianceRecord[]
+}
+
+model CompanyMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  role      String   // ADMIN | LEGAL | FINANCE | BOARD | EMPLOYEE | INVESTOR | VIEWER
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Cap table primitives
+// ---------------------------------------------------------------------------
+
+model Stakeholder {
+  id               String    @id @default(cuid())
+  companyId        String
+  userId           String?
+  name             String
+  email            String?
+  type             String    @default("INDIVIDUAL") // INDIVIDUAL | ENTITY
+  relationship     String    @default("EMPLOYEE") // FOUNDER | EMPLOYEE | ADVISOR | INVESTOR | BOARD_MEMBER | CONSULTANT | FORMER_EMPLOYEE | OTHER
+  title            String?
+  department       String?
+  costCenter       String?
+  employmentStatus String?   // ACTIVE | TERMINATED | ON_LEAVE
+  employeeId       String?
+  startDate        DateTime?
+  terminationDate  DateTime?
+  terminationReason String?
+  address          String?
+  country          String    @default("US")
+  taxId            String?
+  isUsTaxpayer     Boolean   @default(true)
+  accredited       Boolean   @default(false)
+  notes            String?
+  tags             String    @default("[]") // JSON string[]
+  portalInvitedAt  DateTime?
+  portalAcceptedAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id])
+  securities       Security[]
+  exerciseRequests ExerciseRequest[]
+  signers          ConsentSigner[]
+  documents        Document[]
+  signatures       Signature[]
+  updateViews      UpdateView[]
+  fromTransactions Transaction[]     @relation("fromStakeholder")
+  toTransactions   Transaction[]     @relation("toStakeholder")
+  notifications    Notification[]
+  offerLetters     OfferLetter[]
+  tenderParticipations TenderParticipation[]
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+model ShareClass {
+  id                   String   @id @default(cuid())
+  companyId            String
+  name                 String   // "Common", "Series Seed Preferred", "Series A Preferred"
+  prefix               String   // certificate prefix e.g. "CS", "PS-SEED", "PS-A"
+  type                 String   // COMMON | PREFERRED
+  authorizedShares     Float
+  parValue             Float    @default(0.0001)
+  originalIssuePrice   Float?
+  liquidationMultiple  Float    @default(1)
+  participating        Boolean  @default(false)
+  participationCap     Float?   // multiple of OIP, null = uncapped
+  seniority            Int      @default(1) // 1 = most senior; common is paid last
+  conversionRatio      Float    @default(1)
+  dividendRate         Float?   // annual % of OIP
+  dividendType         String   @default("NON_CUMULATIVE") // NON_CUMULATIVE | CUMULATIVE | NONE
+  antiDilution         String   @default("BROAD_BASED") // NONE | BROAD_BASED | NARROW_BASED | FULL_RATCHET
+  votesPerShare        Float    @default(1)
+  boardApprovalDate    DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  securities  Security[]
+  equityPlans EquityPlan[]
+  rounds      FundingRound[]
+
+  @@index([companyId])
+}
+
+model EquityPlan {
+  id                String    @id @default(cuid())
+  companyId         String
+  shareClassId      String
+  name              String    // "2023 Equity Incentive Plan"
+  authorizedShares  Float
+  adoptionDate      DateTime?
+  boardApprovalDate DateTime?
+  stockholderApprovalDate DateTime?
+  expirationDate    DateTime?
+  planDocumentId    String?
+  status            String    @default("ACTIVE") // ACTIVE | TERMINATED | DRAFT
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shareClass ShareClass @relation(fields: [shareClassId], references: [id])
+  securities Security[]
+
+  @@index([companyId])
+}
+
+model VestingSchedule {
+  id                        String   @id @default(cuid())
+  companyId                 String
+  name                      String
+  type                      String   @default("TIME") // TIME | MILESTONE | HYBRID | IMMEDIATE | CUSTOM
+  totalMonths               Int      @default(48)
+  cliffMonths               Int      @default(12)
+  cliffPercent              Float?   // vested at cliff; defaults to pro-rata
+  frequency                 String   @default("MONTHLY") // MONTHLY | QUARTERLY | ANNUALLY | DAILY
+  accelerationSingleTrigger Float    @default(0) // % accelerated on change of control
+  accelerationDoubleTrigger Float    @default(0) // % accelerated on CoC + termination
+  isTemplate                Boolean  @default(true)
+  description               String?
+  createdAt                 DateTime @default(now())
+
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  milestones VestingMilestone[]
+  securities Security[]
+
+  @@index([companyId])
+}
+
+model VestingMilestone {
+  id          String    @id @default(cuid())
+  scheduleId  String
+  description String
+  percent     Float
+  sortOrder   Int       @default(0)
+  achievedAt  DateTime?
+
+  schedule VestingSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+
+model Security {
+  id                 String    @id @default(cuid())
+  companyId          String
+  stakeholderId      String
+  type               String    // COMMON_SHARES | PREFERRED_SHARES | OPTION_ISO | OPTION_NSO | RSU | RSA | WARRANT | SAFE | CONVERTIBLE_NOTE | PROFITS_INTEREST
+  certificateNumber  String
+  shareClassId       String?
+  equityPlanId       String?
+  vestingScheduleId  String?
+
+  quantity           Float     // shares / units granted or issued
+  pricePerShare      Float?    // purchase price for shares
+  exercisePrice      Float?    // strike for options/warrants
+  fmvAtGrant         Float?    // 409A FMV on grant date
+  totalAmount        Float?    // SAFE / note principal; purchase consideration
+
+  issueDate          DateTime
+  grantDate          DateTime?
+  vestingStartDate   DateTime?
+  expirationDate     DateTime?
+  boardApprovalDate  DateTime?
+
+  status             String    @default("OUTSTANDING") // DRAFT | PENDING_SIGNATURE | OUTSTANDING | EXERCISED | CANCELLED | REPURCHASED | CONVERTED | EXPIRED | TRANSFERRED | FORFEITED
+
+  // convertible instrument terms
+  valuationCap       Float?
+  discountPercent    Float?
+  safeType           String?   // PRE_MONEY | POST_MONEY
+  mfn                Boolean   @default(false)
+  proRataRight       Boolean   @default(false)
+  interestRate       Float?
+  interestType       String?   // SIMPLE | COMPOUND
+  maturityDate       DateTime?
+  conversionTrigger  Float?    // qualified financing threshold
+
+  // option / warrant lifecycle
+  exercisedQuantity  Float     @default(0)
+  cancelledQuantity  Float     @default(0)
+  ptepMonths         Int?      // post-termination exercise period, months
+  earlyExercise      Boolean   @default(false)
+  isoLimitSplitFrom  String?   // securityId this was split from for the $100K rule
+
+  // restricted stock
+  election83bDeadline  DateTime?
+  election83bFiledDate DateTime?
+  repurchaseRight      Boolean   @default(false)
+
+  accelerationOverride String?   // JSON override of schedule acceleration
+  legend               String?
+  notes                String?
+  customFields         String    @default("{}") // JSON
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stakeholder     Stakeholder       @relation(fields: [stakeholderId], references: [id])
+  shareClass      ShareClass?       @relation(fields: [shareClassId], references: [id])
+  equityPlan      EquityPlan?       @relation(fields: [equityPlanId], references: [id])
+  vestingSchedule VestingSchedule?  @relation(fields: [vestingScheduleId], references: [id])
+  transactions    Transaction[]
+  documents       Document[]
+  exerciseRequests ExerciseRequest[]
+  exhibits        ConsentExhibit[]
+  tenderParticipations TenderParticipation[]
+
+  @@unique([companyId, certificateNumber])
+  @@index([companyId])
+  @@index([stakeholderId])
+}
+
+model Transaction {
+  id                String    @id @default(cuid())
+  companyId         String
+  type              String    // ISSUANCE | EXERCISE | CANCELLATION | TRANSFER | REPURCHASE | CONVERSION | STOCK_SPLIT | ACCELERATION | MODIFICATION | TERMINATION | VESTING | REPRICING
+  securityId        String?
+  fromStakeholderId String?
+  toStakeholderId   String?
+  quantity          Float
+  pricePerShare     Float?
+  totalAmount       Float?
+  effectiveDate     DateTime
+  notes             String?
+  metadata          String    @default("{}") // JSON
+  createdById       String?
+  createdAt         DateTime  @default(now())
+
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  security        Security?    @relation(fields: [securityId], references: [id])
+  fromStakeholder Stakeholder? @relation("fromStakeholder", fields: [fromStakeholderId], references: [id])
+  toStakeholder   Stakeholder? @relation("toStakeholder", fields: [toStakeholderId], references: [id])
+
+  @@index([companyId, effectiveDate])
+}
+
+// ---------------------------------------------------------------------------
+// Valuations, fundraising, modeling
+// ---------------------------------------------------------------------------
+
+model Valuation {
+  id               String    @id @default(cuid())
+  companyId        String
+  status           String    @default("REQUESTED") // REQUESTED | IN_PROGRESS | DRAFT_DELIVERED | ACCEPTED | EXPIRED | SUPERSEDED
+  purpose          String    @default("ANNUAL") // ANNUAL | MATERIAL_EVENT | FINANCING | INITIAL
+  valuationDate    DateTime
+  effectiveFrom    DateTime?
+  effectiveTo      DateTime?
+  fairMarketValue  Float?    // common FMV per share
+  preferredPrice   Float?
+  enterpriseValue  Float?
+  equityValue      Float?
+  methodology      String?   // OPM | PWERM | BACKSOLVE | HYBRID | MARKET | INCOME | ASSET
+  dlomPercent      Float?
+  volatility       Float?
+  riskFreeRate     Float?
+  timeToLiquidity  Float?    // years
+  provider         String    @default("In-house valuation team")
+  analyst          String?
+  reportDocumentId String?
+  boardConsentId   String?
+  requestedAt      DateTime  @default(now())
+  deliveredAt      DateTime?
+  acceptedAt       DateTime?
+  intake           String    @default("{}") // JSON questionnaire answers
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, valuationDate])
+}
+
+model FundingRound {
+  id                  String    @id @default(cuid())
+  companyId           String
+  name                String
+  roundType           String    // PRICED | SAFE | CONVERTIBLE_NOTE | SECONDARY | BRIDGE
+  shareClassId        String?
+  preMoneyValuation   Float?
+  postMoneyValuation  Float?
+  amountRaised        Float     @default(0)
+  targetAmount        Float?
+  pricePerShare       Float?
+  optionPoolIncrease  Float?    // shares added to the pool as part of the round
+  closeDate           DateTime?
+  status              String    @default("PLANNED") // PLANNED | OPEN | CLOSED
+  leadInvestor        String?
+  termSheetDocumentId String?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shareClass ShareClass? @relation(fields: [shareClassId], references: [id])
+
+  @@index([companyId])
+}
+
+model Scenario {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  type        String   // FINANCING | EXIT | HIRING | REFRESH | POOL_FORECAST
+  params      String   // JSON input parameters
+  results     String?  // JSON cached outputs
+  description String?
+  createdById String?
+  sharedWith  String   @default("[]") // JSON string[] of emails
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Governance, documents & signatures
+// ---------------------------------------------------------------------------
+
+model BoardConsent {
+  id            String    @id @default(cuid())
+  companyId     String
+  title         String
+  type          String    // OPTION_GRANT | VALUATION_409A | EQUITY_PLAN | SAFE_ISSUANCE | ROUND_APPROVAL | SHARE_CLASS | CUSTOM
+  body          String    // markdown resolution text
+  status        String    @default("DRAFT") // DRAFT | SENT | APPROVED | REJECTED | EXPIRED | WITHDRAWN
+  effectiveDate DateTime?
+  sentAt        DateTime?
+  approvedAt    DateTime?
+  requiredApprovals Int   @default(0) // 0 = unanimous
+  documentId    String?
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  signers  ConsentSigner[]
+  exhibits ConsentExhibit[]
+
+  @@index([companyId])
+}
+
+model ConsentSigner {
+  id            String    @id @default(cuid())
+  consentId     String
+  stakeholderId String?
+  name          String
+  email         String
+  status        String    @default("PENDING") // PENDING | SIGNED | DECLINED
+  signedAt      DateTime?
+  comment       String?
+  token         String    @unique @default(cuid())
+
+  consent     BoardConsent @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  stakeholder Stakeholder? @relation(fields: [stakeholderId], references: [id])
+
+  @@index([consentId])
+}
+
+model ConsentExhibit {
+  id          String  @id @default(cuid())
+  consentId   String
+  label       String  // "Exhibit A"
+  description String
+  securityId  String?
+  referenceId String? // valuation / plan / round id
+  referenceType String? // VALUATION | EQUITY_PLAN | ROUND | SHARE_CLASS
+  documentId  String?
+
+  consent  BoardConsent @relation(fields: [consentId], references: [id], onDelete: Cascade)
+  security Security?    @relation(fields: [securityId], references: [id])
+
+  @@index([consentId])
+}
+
+model Document {
+  id              String    @id @default(cuid())
+  companyId       String
+  name            String
+  folder          String    @default("General") // data-room folder path e.g. "Securities/CS-1"
+  type            String    @default("OTHER") // CERTIFICATE | GRANT_AGREEMENT | OPTION_AGREEMENT | SAFE | CONVERTIBLE_NOTE | BOARD_CONSENT | VALUATION_REPORT | PLAN_DOCUMENT | OFFER_LETTER | FORM_3921 | ELECTION_83B | RULE_701 | CHARTER | TERM_SHEET | FINANCIALS | OTHER
+  mimeType        String    @default("text/plain")
+  sizeBytes       Int       @default(0)
+  content         String?   // generated document body (markdown/html); uploads keep a storagePath
+  storagePath     String?
+  securityId      String?
+  stakeholderId   String?
+  uploadedById    String?
+  signatureStatus String    @default("NOT_REQUIRED") // NOT_REQUIRED | PENDING | PARTIALLY_SIGNED | SIGNED
+  visibility      String    @default("COMPANY") // COMPANY | HOLDER | INVESTORS | BOARD | PUBLIC
+  version         Int       @default(1)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  security    Security?    @relation(fields: [securityId], references: [id])
+  stakeholder Stakeholder? @relation(fields: [stakeholderId], references: [id])
+  signatures  Signature[]
+
+  @@index([companyId, folder])
+  @@index([securityId])
+}
+
+model Signature {
+  id            String    @id @default(cuid())
+  documentId    String
+  stakeholderId String?
+  name          String
+  email         String
+  role          String    // COMPANY | HOLDER | BOARD | INVESTOR | SPOUSE
+  status        String    @default("PENDING") // PENDING | SIGNED | DECLINED
+  signedAt      DateTime?
+  ipAddress     String?
+  token         String    @unique @default(cuid())
+  sortOrder     Int       @default(0)
+
+  document    Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  stakeholder Stakeholder? @relation(fields: [stakeholderId], references: [id])
+
+  @@index([documentId])
+}
+
+// ---------------------------------------------------------------------------
+// Employee workflows
+// ---------------------------------------------------------------------------
+
+model ExerciseRequest {
+  id                 String    @id @default(cuid())
+  companyId          String
+  securityId         String
+  stakeholderId      String
+  quantity           Float
+  exercisePrice      Float
+  totalCost          Float
+  fmvAtExercise      Float?
+  isIso              Boolean   @default(false)
+  method             String    @default("ACH") // ACH | WIRE | CHECK | CASHLESS | NET_EXERCISE
+  status             String    @default("REQUESTED") // REQUESTED | APPROVED | PAYMENT_PENDING | PAID | COMPLETED | REJECTED | CANCELLED
+  requestedAt        DateTime  @default(now())
+  approvedAt         DateTime?
+  paidAt             DateTime?
+  completedAt        DateTime?
+  resultingSecurityId String?
+  election83b        Boolean   @default(false)
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  security    Security    @relation(fields: [securityId], references: [id])
+  stakeholder Stakeholder @relation(fields: [stakeholderId], references: [id])
+
+  @@index([companyId])
+}
+
+model OfferLetter {
+  id                String    @id @default(cuid())
+  companyId         String
+  candidateName     String
+  candidateEmail    String
+  title             String
+  department        String?
+  level             String?
+  salary            Float?
+  bonus             Float?
+  equityQuantity    Float
+  equityType        String    @default("OPTION_ISO") // OPTION_ISO | OPTION_NSO | RSU | RSA
+  strikePrice       Float?
+  vestingScheduleId String?
+  startDate         DateTime?
+  expiresAt         DateTime?
+  packages          String    @default("[]") // JSON alternative packages [{label, salary, equityQuantity}]
+  selectedPackage   Int?
+  status            String    @default("DRAFT") // DRAFT | SENT | VIEWED | ACCEPTED | DECLINED | EXPIRED
+  token             String    @unique @default(cuid())
+  message           String?
+  sentAt            DateTime?
+  viewedAt          DateTime?
+  acceptedAt        DateTime?
+  stakeholderId     String?
+  createdById       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stakeholder Stakeholder? @relation(fields: [stakeholderId], references: [id])
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Communications, liquidity, compliance, ops
+// ---------------------------------------------------------------------------
+
+model InvestorUpdate {
+  id            String    @id @default(cuid())
+  companyId     String
+  title         String
+  body          String    // markdown
+  status        String    @default("DRAFT") // DRAFT | PUBLISHED
+  audience      String    @default("[]") // JSON tags / relationships e.g. ["INVESTOR","BOARD_MEMBER"]
+  externalEmails String   @default("[]") // JSON string[]
+  publicToken   String?   @unique
+  publishedAt   DateTime?
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  views   UpdateView[]
+
+  @@index([companyId])
+}
+
+model UpdateView {
+  id            String   @id @default(cuid())
+  updateId      String
+  stakeholderId String?
+  email         String?
+  viewedAt      DateTime @default(now())
+
+  update      InvestorUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  stakeholder Stakeholder?   @relation(fields: [stakeholderId], references: [id])
+
+  @@index([updateId])
+}
+
+model TenderOffer {
+  id            String    @id @default(cuid())
+  companyId     String
+  name          String
+  buyerName     String
+  pricePerShare Float
+  maxShares     Float
+  maxPercentPerHolder Float @default(20)
+  startDate     DateTime
+  endDate       DateTime
+  eligibility   String    @default("[]") // JSON relationships eligible
+  status        String    @default("DRAFT") // DRAFT | OPEN | CLOSED | SETTLED | CANCELLED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company      Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  participants TenderParticipation[]
+
+  @@index([companyId])
+}
+
+model TenderParticipation {
+  id            String   @id @default(cuid())
+  tenderOfferId String
+  stakeholderId String
+  securityId    String
+  sharesOffered Float
+  sharesAccepted Float?
+  status        String   @default("ELECTED") // ELECTED | ACCEPTED | PRORATED | SETTLED | WITHDRAWN
+  createdAt     DateTime @default(now())
+
+  tenderOffer TenderOffer @relation(fields: [tenderOfferId], references: [id], onDelete: Cascade)
+  stakeholder Stakeholder @relation(fields: [stakeholderId], references: [id])
+  security    Security    @relation(fields: [securityId], references: [id])
+
+  @@index([tenderOfferId])
+}
+
+model ComplianceRecord {
+  id          String    @id @default(cuid())
+  companyId   String
+  type        String    // FORM_3921 | RULE_701_DISCLOSURE | ELECTION_83B | ISO_100K_REVIEW | ASC_718_REPORT
+  taxYear     Int?
+  referenceId String?   // securityId / exerciseRequestId / stakeholderId
+  status      String    @default("PENDING") // PENDING | GENERATED | FILED | SENT | ACKNOWLEDGED | WAIVED
+  dueDate     DateTime?
+  completedAt DateTime?
+  documentId  String?
+  data        String    @default("{}") // JSON
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, type])
+}
+
+model Integration {
+  id          String    @id @default(cuid())
+  companyId   String
+  provider    String    // GUSTO | RIPPLING | BAMBOOHR | WORKDAY | JUSTWORKS | DEEL | QUICKBOOKS | XERO | NETSUITE | SLACK | DOCUSIGN | NASDAQ_PRIVATE_MARKET
+  category    String    // HRIS | ACCOUNTING | COMMUNICATION | ESIGN | LIQUIDITY
+  status      String    @default("DISCONNECTED") // CONNECTED | DISCONNECTED | ERROR | SYNCING
+  config      String    @default("{}") // JSON
+  connectedAt DateTime?
+  lastSyncAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, provider])
+}
+
+model Notification {
+  id            String    @id @default(cuid())
+  companyId     String
+  userId        String?
+  stakeholderId String?
+  type          String    // TASK | ALERT | INFO | DEADLINE
+  title         String
+  body          String?
+  link          String?
+  dueDate       DateTime?
+  status        String    @default("OPEN") // OPEN | DONE | DISMISSED
+  createdAt     DateTime  @default(now())
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id])
+  stakeholder Stakeholder? @relation(fields: [stakeholderId], references: [id])
+
+  @@index([companyId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String   // CREATE | UPDATE | DELETE | ISSUE | EXERCISE | CANCEL | TRANSFER | APPROVE | SIGN | EXPORT | LOGIN | INVITE
+  entityType String
+  entityId   String?
+  summary    String
+  before     String?  // JSON
+  after      String?  // JSON
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+}
