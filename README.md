@@ -2,6 +2,13 @@
 
 A full-featured cap table and equity management application in the spirit of Pulley and Carta: cap table ledger, securities issuance with e-signature, fundraising and exit modeling, 409A valuations, board consents, compliance (Rule 701, ISO $100K, 83(b), Form 3921, ASC 718), a data room, employee and investor portals, offer letters, investor updates, liquidity programs, reports and role-based access.
 
+![Capt marketing site: "Every share, accounted for." beside the demo company's cap table](docs/screenshots/marketing-hero.png)
+
+| | |
+| --- | --- |
+| ![Workspace dashboard: ownership, tasks, option pool and vesting outlook](docs/screenshots/dashboard.png) | ![Cap table by stakeholder with an as-of date control](docs/screenshots/cap-table.png) |
+| ![Scroll story: the demo company's ownership from incorporation to today](docs/screenshots/marketing-story.png) | ![Exit waterfall demo running the product's engine in the browser](docs/screenshots/marketing-exit.png) |
+
 ## Quick start
 
 ```bash
