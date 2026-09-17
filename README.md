@@ -76,8 +76,6 @@ The workspace sidebar is a slide-over drawer below `lg` (`MobileSidebar` in `src
 
 ## License
 
-Copyright © 2026 The Capt Authors.
+[MIT](LICENSE). Copyright © 2026 The Capt Authors.
 
-Capt is free software, licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). You can use, study, modify and self-host it. If you run a modified version as a service that other people use over a network, you must make the source of your version available to them under the same license.
-
-The software comes with no warranty. It is not legal, tax or investment advice.
+You can use, change, self-host and sell Capt, as long as the copyright and license notice stay with it. The software comes with no warranty, and nothing in it is legal, tax or investment advice.
